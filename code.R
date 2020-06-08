@@ -72,6 +72,33 @@ my_data%>%ggplot(aes(thal))+geom_histogram(fill="lightblue")
 # Value 1: > 50% diameter narrowing
 my_data%>%ggplot(aes(num))+geom_density(fill="lightblue")
 
+#Relationship between the variables
+#Sex vs Age
+chisq.test(my_data$Sex,my_data$Age)$p.value
+#Sex vs chest pain
+chisq.test(my_data$Sex,my_data$Cp)$p.value
+#Sex vs resting blood sugar
+chisq.test(my_data$Sex,my_data$Trestbps)$p.value
+#Sex vs serum cholestoral
+chisq.test(my_data$Sex,my_data$Chol)$p.value
+#Sex vs fasting blood sugar
+chisq.test(my_data$Sex,my_data$fbs)$p.value
+#sex vs resting electrocardiographic results
+chisq.test(my_data$Sex,my_data$restecg)$p.value
+#Sex vs maximum heart rate achieved
+chisq.test(my_data$Sex,my_data$thalach)$p.value
+#Sex vs ST depression induced by exercise relative to rest
+chisq.test(my_data$Sex,my_data$oldpeak)$p.value
+#Sex vs the slope of the peak exercise ST segment
+chisq.test(my_data$Sex,my_data$slope)$p.value
+#Sex vs number of major vessels (0-3) colored by flourosopy
+chisq.test(my_data$Sex,my_data$ca)$p.value
+#Sex vs thal
+chisq.test(my_data$Sex,my_data$thal)$p.value
+#Sex vs presence of heart disease
+chisq.test(my_data$Sex,my_data$num)$p.value
+
+
 #Machine learning
 #test and train sets
 set.seed(3,sample.kind="Rounding")
@@ -80,42 +107,59 @@ test_set=my_data[test_index,]
 train_set=my_data[-test_index,]
 
 #modeling
-#model 1 
-model_glm=glm(Sex ~ .,data=train_set)
-y_hat_glm=predict(model_glm,test_set)
-cm_glm=confusionMatrix(data=factor(round(y_hat_glm)),reference=factor(test_set$Sex))
-cm_glm
-results <- data_frame(method = " Logistic Linear Regression",
-                      Accuracy = cm_glm$overall[["Accuracy"]],
-                      Sensitivity = cm_glm$byClass[["Sensitivity"]],
-                      Specificity = cm_glm$byClass[["Specificity"]])
+#model 1:linear regression
+#fiting the model
+model_lm=lm(Sex ~ .,data=train_set)
+#predictions
+y_hat_lm=predict(model_lm,test_set)
+#confusion matrix
+cm_lm=confusionMatrix(data=factor(round(y_hat_lm)),reference=factor(test_set$Sex))
+#print the results of the confusion matrix
+cm_lm
+#store the results in a data frame
+results <- data_frame(method = "Linear Regression",
+                      Accuracy = cm_lm$overall[["Accuracy"]],
+                      Sensitivity = cm_lm$byClass[["Sensitivity"]],
+                      Specificity = cm_lm$byClass[["Specificity"]])
+#print the results
 results[1,]%>%knitr::kable()
-#model 2
+#model 2:k-nn
+#fiting the model
 model_knn=knn3(Sex~.,data=train_set,k=5)
+#predictions
 y_hat_knn=predict(model_knn,test_set)
+#store the predictions in the closets interger
 p_hat_knn=ifelse(y_hat_knn[,1]>0.5,0,1)
+#confusion matrix
 cm_knn=confusionMatrix(data=factor(p_hat_knn),reference=factor(test_set$Sex))
+#print the results of confusion matrix
+cm_knn
+#insert the new model to the data frame with the results
 results <- bind_rows(results,
                        data_frame(method="Knn",
                                   Accuracy = cm_knn$overall[["Accuracy"]],
                                   Sensitivity = cm_knn$byClass[["Sensitivity"]],
                                   Specificity = cm_knn$byClass[["Specificity"]]))
+#print the results
 results[2,]%>%knitr::kable()
-#model 3
+#model 3:decision tree 
+#fiting the model
 model_rpart=rpart(Sex~ .,data=train_set)
+#predictions
 y_hat_rpart=predict(model_rpart,test_set)
+#confusion matrix
 cm_rpart=confusionMatrix(data=factor(round(y_hat_rpart)),reference = factor(test_set$Sex))
-
+#print the results of the confusion matrix
+cm_rpart
+#insert the new model to the data frame with the results
 results <- bind_rows(results,
                      data_frame(method="Rpart",
                                 Accuracy = cm_rpart$overall[["Accuracy"]],
                                 Sensitivity = cm_rpart$byClass[["Sensitivity"]],
                                 Specificity = cm_rpart$byClass[["Specificity"]]))
+#print the results
 results[3,]%>%knitr::kable()
 
-model_glm=glm(Sex ~ .,data=train_set)
-y_hat_glm=predict(model_glm,test_set)
-cm_glm=confusionMatrix(data=factor(round(y_hat_glm)),reference=factor(test_set$Sex))
-cm_glm
+#the decision tree
 plot(model_rpart)
 text(model_rpart)
